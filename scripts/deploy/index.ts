@@ -195,19 +195,6 @@ const checkAndCreateDatabase = async () => {
   }
 };
 
-/**
- * 迁移数据库
- */
-const migrateDatabase = () => {
-  console.log("📝 Migrating remote database...");
-  try {
-    execSync("pnpm run db:migrate-remote", { stdio: "inherit" });
-    console.log("✅ Database migration completed successfully");
-  } catch (error) {
-    console.error("❌ Database migration failed:", error);
-    throw error;
-  }
-};
 
 /**
  * 检查并创建KV命名空间
