@@ -157,6 +157,57 @@ const updateKVConfig = (namespaceId: string) => {
   }
 };
 
+/**
+ * 检查并创建数据库
+ */
+const checkAndCreateDatabase = async () => {
+  console.log(`🔍 Checking if database "${DATABASE_NAME}" exists...`);
+
+  try {
+    const database = await getDatabase();
+
+    if (!database || !database.uuid) {
+      throw new Error('Database object is missing a valid UUID');
+    }
+
+    updateDatabaseConfig(database.uuid);
+    console.log(`✅ Database "${DATABASE_NAME}" already exists (ID: ${database.uuid})`);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      console.log(`⚠️ Database not found, creating new database...`);
+      try {
+        const database = await createDatabase();
+
+        if (!database || !database.uuid) {
+          throw new Error('Database object is missing a valid UUID');
+        }
+
+        updateDatabaseConfig(database.uuid);
+        console.log(`✅ Database "${DATABASE_NAME}" created successfully (ID: ${database.uuid})`);
+      } catch (createError) {
+        console.error(`❌ Failed to create database:`, createError);
+        throw createError;
+      }
+    } else {
+      console.error(`❌ An error occurred while checking the database:`, error);
+      throw error;
+    }
+  }
+};
+
+/**
+ * 迁移数据库
+ */
+const migrateDatabase = () => {
+  console.log("📝 Migrating remote database...");
+  try {
+    execSync("pnpm run db:migrate-remote", { stdio: "inherit" });
+    console.log("✅ Database migration completed successfully");
+  } catch (error) {
+    console.error("❌ Database migration failed:", error);
+    throw error;
+  }
+};
 
 /**
  * 检查并创建KV命名空间
@@ -429,6 +480,7 @@ const main = async () => {
     setupEnvFile();
     setupWranglerConfigs();
     await checkAndCreateDatabase();
+    migrateDatabase();
     await checkAndCreateKVNamespace();
     await checkAndCreatePages();
     pushPagesSecret();
